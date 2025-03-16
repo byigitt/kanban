@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Card as CardType, Column, Board, KanbanData, Priority } from '../types';
 import CardDetail from './CardDetail';
-import { format } from 'date-fns';
+import { formatDate, getDueDateStatusClass, getDueDateStatusText } from '../utils/dateUtils';
 import { FiClock } from 'react-icons/fi';
 
 interface CardProps {
@@ -126,9 +126,9 @@ const Card = ({ card, index, column, board, setData, kanbanData }: CardProps) =>
                 )}
                 
                 {card.dueDate && (
-                  <span className="flex items-center">
+                  <span className={`flex items-center ${getDueDateStatusClass(card.dueDate)}`} title={getDueDateStatusText(card.dueDate)}>
                     <FiClock className="mr-1" />
-                    {format(new Date(card.dueDate), 'MMM d')}
+                    {formatDate(card.dueDate, 'MMM d')}
                   </span>
                 )}
               </div>

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Card as CardType, Column, Board, KanbanData, Comment, Activity } from '../types';
 import CardForm from './CardForm';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { FiX, FiClock, FiTrash2, FiEdit2 } from 'react-icons/fi';
+import { formatDate, getDueDateStatusClass, getDueDateStatusText } from '../utils/dateUtils';
 
 interface CardDetailProps {
   card: CardType;
@@ -26,11 +27,6 @@ const CardDetail = ({ card, column, board, setData, kanbanData, onClose }: CardD
   // Get user by ID
   const getUser = (userId: string) => {
     return kanbanData.users?.find(user => user.id === userId);
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM d, yyyy');
   };
 
   // Update card
@@ -193,7 +189,7 @@ const CardDetail = ({ card, column, board, setData, kanbanData, onClose }: CardD
                 {card.dueDate && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Due Date</h3>
-                    <div className="flex items-center">
+                    <div className={`flex items-center ${getDueDateStatusClass(card.dueDate)}`} title={getDueDateStatusText(card.dueDate)}>
                       <FiClock className="mr-1" />
                       {formatDate(card.dueDate)}
                     </div>

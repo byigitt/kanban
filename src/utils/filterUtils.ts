@@ -1,4 +1,5 @@
 import { Card, FilterOptions } from "../types";
+import { isOverdue, isToday, isWithinDays, isFuture } from "./dateUtils";
 
 /**
  * Filters cards based on the provided filter options
@@ -29,28 +30,18 @@ export const filterCards = (
     // Filter by due date
     let passesDueDateFilter = true;
     if (filterOptions.dueDateFilter && card.dueDate) {
-      const dueDate = new Date(card.dueDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const nextWeek = new Date(today);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-
       switch (filterOptions.dueDateFilter) {
         case "overdue":
-          passesDueDateFilter = dueDate < today;
+          passesDueDateFilter = isOverdue(card.dueDate);
           break;
         case "today":
-          passesDueDateFilter = dueDate >= today && dueDate < tomorrow;
+          passesDueDateFilter = isToday(card.dueDate);
           break;
         case "thisWeek":
-          passesDueDateFilter = dueDate >= today && dueDate < nextWeek;
+          passesDueDateFilter = isWithinDays(card.dueDate, 7);
           break;
         case "future":
-          passesDueDateFilter = dueDate >= nextWeek;
+          passesDueDateFilter = isFuture(card.dueDate);
           break;
       }
     } else if (filterOptions.dueDateFilter) {
