@@ -5,3 +5,64 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom scrollbar styling */
+.board-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 114, 128, 0.5) rgba(31, 41, 55, 0.1);
+}
+
+.board-scroll-container::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.board-scroll-container::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.1);
+  border-radius: 4px;
+}
+
+.board-scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(107, 114, 128, 0.5);
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.board-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.8);
+}
+
+/* Hide scrollbar when not hovering */
+.board-scroll-container.hide-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+}
+
+.board-scroll-container.hide-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(107, 114, 128, 0.5);
+}
+
+/* Fade indicators for horizontal scrolling */
+.scroll-fade-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.3s ease;
+}
+
+.scroll-fade-left {
+  left: 0;
+  background: linear-gradient(to right, rgba(17, 24, 39, 0.7), transparent);
+}
+
+.scroll-fade-right {
+  right: 0;
+  background: linear-gradient(to left, rgba(17, 24, 39, 0.7), transparent);
+}
+
+/* Hide fade indicators when not needed */
+.scroll-fade-hidden {
+  opacity: 0;
+}
