@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Board, KanbanData } from '../types';
+import { Board, KanbanData, Card, Column } from '../types';
 import { FiPlus, FiMenu, FiMoon, FiSun, FiSettings, FiTag } from 'react-icons/fi';
 import ImportExport from './ImportExport';
 import LabelManager from './LabelManager';
+import SearchBar from './SearchBar';
 import { keyboardShortcutsHelp } from '../utils/keyboardShortcuts';
 
 interface HeaderProps {
@@ -78,6 +79,38 @@ const Header = ({ boards, activeBoard, setData, kanbanData }: HeaderProps) => {
 
   // Get the active board title
   const activeBoardTitle = boards.find(board => board.id === activeBoard)?.title || 'Kanban Board';
+
+  // Handle selecting a search result
+  const handleSearchResult = (card: Card, column: Column, board: Board) => {
+    // Switch to the board if it's not the active one
+    if (board.id !== activeBoard) {
+      switchBoard(board.id);
+    }
+
+    // Open the card detail
+    // We need to find the card in the current data structure
+    // as it might have changed since the search was performed
+    setTimeout(() => {
+      const currentBoard = kanbanData.boards.find(b => b.id === board.id);
+      if (!currentBoard) return;
+
+      const currentColumn = currentBoard.columns.find(c => c.id === column.id);
+      if (!currentColumn) return;
+
+      const currentCard = currentColumn.cards.find(c => c.id === card.id);
+      if (!currentCard) return;
+
+      // Create a custom event to open the card
+      const event = new CustomEvent('openCard', { 
+        detail: { 
+          cardId: card.id,
+          columnId: column.id,
+          boardId: board.id
+        } 
+      });
+      window.dispatchEvent(event);
+    }, 100);
+  };
 
   return (
     <>
@@ -156,6 +189,11 @@ const Header = ({ boards, activeBoard, setData, kanbanData }: HeaderProps) => {
           </div>
           
           <div className="flex items-center space-x-2">
+            <SearchBar 
+              kanbanData={kanbanData}
+              onSelectResult={handleSearchResult}
+            />
+            
             <button
               className="p-2 rounded-full hover:bg-gray-700"
               onClick={() => setShowShortcutsHelp(!showShortcutsHelp)}
