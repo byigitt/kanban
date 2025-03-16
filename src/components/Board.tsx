@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { Board as BoardType, KanbanData, Column as ColumnType } from '../types';
+import { Board as BoardType, KanbanData, Column as ColumnType, Card as CardType } from '../types';
 import Column from './Column';
+import LabelFilter from './LabelFilter';
 import { FiPlus } from 'react-icons/fi';
 
 interface BoardProps {
@@ -13,6 +14,7 @@ interface BoardProps {
 const Board = ({ board, setData, kanbanData }: BoardProps) => {
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [showNewColumnForm, setShowNewColumnForm] = useState(false);
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
 
   // Add a new column to the board
   const addColumn = (e: React.FormEvent) => {
@@ -44,10 +46,26 @@ const Board = ({ board, setData, kanbanData }: BoardProps) => {
     setShowNewColumnForm(false);
   };
 
+  // Filter cards based on selected labels
+  const filterCards = (cards: CardType[]): CardType[] => {
+    if (selectedLabelIds.length === 0) return cards;
+    
+    return cards.filter(card => 
+      selectedLabelIds.some(labelId => card.labels.includes(labelId))
+    );
+  };
+
   return (
     <main className="container mx-auto px-4 py-6 overflow-x-auto">
-      <div className="flex items-center mb-6">
+      <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">{board.title}</h2>
+        <div className="flex items-center space-x-2">
+          <LabelFilter 
+            labels={kanbanData.labels || []} 
+            selectedLabels={selectedLabelIds}
+            setSelectedLabels={setSelectedLabelIds}
+          />
+        </div>
       </div>
 
       <Droppable droppableId="board-columns" direction="horizontal" type="column">
@@ -66,11 +84,16 @@ const Board = ({ board, setData, kanbanData }: BoardProps) => {
                     className="flex-shrink-0 w-80"
                   >
                     <Column 
-                      column={column} 
+                      column={{
+                        ...column,
+                        cards: filterCards(column.cards)
+                      }}
+                      originalColumn={column}
                       board={board} 
                       setData={setData} 
                       kanbanData={kanbanData}
                       dragHandleProps={provided.dragHandleProps}
+                      isFiltering={selectedLabelIds.length > 0}
                     />
                   </div>
                 )}

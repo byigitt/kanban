@@ -3,7 +3,7 @@ import { Droppable } from '@hello-pangea/dnd';
 import { Column as ColumnType, Board, KanbanData, Card as CardType } from '../types';
 import Card from './Card';
 import CardForm from './CardForm';
-import { FiPlus, FiMoreVertical } from 'react-icons/fi';
+import { FiPlus, FiMoreVertical, FiFilter } from 'react-icons/fi';
 import { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 
 interface ColumnProps {
@@ -12,23 +12,36 @@ interface ColumnProps {
   setData: React.Dispatch<React.SetStateAction<KanbanData | null>>;
   kanbanData: KanbanData;
   dragHandleProps?: DraggableProvidedDragHandleProps | null;
+  isFiltering?: boolean;
+  originalColumn?: ColumnType;
 }
 
-const Column = ({ column, board, setData, kanbanData, dragHandleProps }: ColumnProps) => {
+const Column = ({ 
+  column, 
+  board, 
+  setData, 
+  kanbanData, 
+  dragHandleProps, 
+  isFiltering = false,
+  originalColumn
+}: ColumnProps) => {
   const [showCardForm, setShowCardForm] = useState(false);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [columnTitle, setColumnTitle] = useState(column.title);
 
+  // Use the original column for operations if we're filtering
+  const operationalColumn = isFiltering && originalColumn ? originalColumn : column;
+
   // Add a new card to the column
   const addCard = (card: CardType) => {
     const updatedColumn = {
-      ...column,
-      cards: [...column.cards, card]
+      ...operationalColumn,
+      cards: [...operationalColumn.cards, card]
     };
 
     const updatedColumns = board.columns.map(col => 
-      col.id === column.id ? updatedColumn : col
+      col.id === operationalColumn.id ? updatedColumn : col
     );
 
     const updatedBoard = {
@@ -51,7 +64,7 @@ const Column = ({ column, board, setData, kanbanData, dragHandleProps }: ColumnP
 
   // Delete the column
   const deleteColumn = () => {
-    const updatedColumns = board.columns.filter(col => col.id !== column.id);
+    const updatedColumns = board.columns.filter(col => col.id !== operationalColumn.id);
     
     const updatedBoard = {
       ...board,
@@ -71,19 +84,19 @@ const Column = ({ column, board, setData, kanbanData, dragHandleProps }: ColumnP
 
   // Update column title
   const updateColumnTitle = () => {
-    if (!columnTitle.trim() || columnTitle === column.title) {
-      setColumnTitle(column.title);
+    if (!columnTitle.trim() || columnTitle === operationalColumn.title) {
+      setColumnTitle(operationalColumn.title);
       setEditingTitle(false);
       return;
     }
 
     const updatedColumn = {
-      ...column,
+      ...operationalColumn,
       title: columnTitle
     };
 
     const updatedColumns = board.columns.map(col => 
-      col.id === column.id ? updatedColumn : col
+      col.id === operationalColumn.id ? updatedColumn : col
     );
 
     const updatedBoard = {
@@ -103,6 +116,16 @@ const Column = ({ column, board, setData, kanbanData, dragHandleProps }: ColumnP
 
     setEditingTitle(false);
   };
+
+  // Get the total number of cards (from original column if filtering)
+  const totalCards = isFiltering && originalColumn 
+    ? originalColumn.cards.length 
+    : column.cards.length;
+
+  // Get the filtered count if filtering
+  const filteredCount = isFiltering 
+    ? column.cards.length 
+    : null;
 
   return (
     <div className="bg-gray-800 rounded-md shadow-md flex flex-col h-full" data-column-id={column.id}>
@@ -129,7 +152,16 @@ const Column = ({ column, board, setData, kanbanData, dragHandleProps }: ColumnP
             className="font-medium text-white cursor-pointer"
             onClick={() => setEditingTitle(true)}
           >
-            {column.title} <span className="text-gray-400 text-sm">({column.cards.length})</span>
+            {column.title} 
+            <span className="text-gray-400 text-sm ml-1">
+              ({filteredCount !== null ? `${filteredCount}/${totalCards}` : totalCards})
+            </span>
+            {isFiltering && filteredCount === 0 && (
+              <span className="ml-2 text-xs text-yellow-400">
+                <FiFilter className="inline mr-1" />
+                Filtered
+              </span>
+            )}
           </h3>
         )}
         
@@ -173,34 +205,42 @@ const Column = ({ column, board, setData, kanbanData, dragHandleProps }: ColumnP
             ref={provided.innerRef}
             {...provided.droppableProps}
           >
-            {column.cards.map((card, index) => (
-              <Card 
-                key={card.id} 
-                card={card} 
-                index={index} 
-                column={column}
-                board={board}
-                setData={setData}
-                kanbanData={kanbanData}
-              />
-            ))}
+            {column.cards.length === 0 && isFiltering ? (
+              <div className="text-center py-4 text-gray-400 text-sm">
+                No cards match the current filter
+              </div>
+            ) : (
+              column.cards.map((card, index) => (
+                <Card 
+                  key={card.id} 
+                  card={card} 
+                  index={index} 
+                  column={isFiltering && originalColumn ? originalColumn : column}
+                  board={board}
+                  setData={setData}
+                  kanbanData={kanbanData}
+                />
+              ))
+            )}
             {provided.placeholder}
             
-            {showCardForm ? (
-              <CardForm 
-                onSubmit={addCard} 
-                onCancel={() => setShowCardForm(false)}
-                kanbanData={kanbanData}
-              />
-            ) : (
-              <button
-                className="w-full mt-2 p-2 flex items-center justify-center text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md shadow-sm transition-colors"
-                onClick={() => setShowCardForm(true)}
-                data-add-card
-              >
-                <FiPlus className="mr-2" />
-                Add Card
-              </button>
+            {!isFiltering && (
+              showCardForm ? (
+                <CardForm 
+                  onSubmit={addCard} 
+                  onCancel={() => setShowCardForm(false)}
+                  kanbanData={kanbanData}
+                />
+              ) : (
+                <button
+                  className="w-full mt-2 p-2 flex items-center justify-center text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md shadow-sm transition-colors"
+                  onClick={() => setShowCardForm(true)}
+                  data-add-card
+                >
+                  <FiPlus className="mr-2" />
+                  Add Card
+                </button>
+              )
             )}
           </div>
         )}
