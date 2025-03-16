@@ -40,10 +40,18 @@ const Header = ({ boards, activeBoard, setData, kanbanData }: HeaderProps) => {
 
   // Switch to a different board
   const switchBoard = (boardId: string) => {
+    const selectedBoard = boards.find(board => board.id === boardId);
+    
     setData(prevData => {
       if (!prevData) return null;
       return { ...prevData, activeBoard: boardId };
     });
+    
+    // Update document title with the board name
+    if (selectedBoard) {
+      document.title = `${selectedBoard.title} | TaskFlow`;
+    }
+    
     setShowBoardMenu(false);
   };
 
@@ -71,6 +79,9 @@ const Header = ({ boards, activeBoard, setData, kanbanData }: HeaderProps) => {
         activeBoard: newBoardId
       };
     });
+
+    // Update document title with the new board name
+    document.title = `${newBoardTitle} | TaskFlow`;
 
     setNewBoardTitle('');
     setShowNewBoardForm(false);
@@ -117,7 +128,10 @@ const Header = ({ boards, activeBoard, setData, kanbanData }: HeaderProps) => {
       <header className="bg-gray-800 text-white shadow-md py-3 px-4">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center">
-            <h1 className="text-xl font-bold mr-4">Kanban</h1>
+            <div className="flex items-center mr-4">
+              <img src="/kanban-logo.svg" alt="TaskFlow Logo" className="w-8 h-8 mr-2" />
+              <h1 className="text-xl font-bold">TaskFlow</h1>
+            </div>
             
             <div className="relative">
               <button 

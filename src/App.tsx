@@ -13,7 +13,14 @@ function App() {
     // Load data from localStorage
     const savedData = localStorage.getItem('kanbanData');
     if (savedData) {
-      setData(JSON.parse(savedData));
+      const parsedData = JSON.parse(savedData);
+      setData(parsedData);
+      
+      // Set document title with active board name
+      const activeBoard = parsedData.boards.find((board: { id: string; title: string }) => board.id === parsedData.activeBoard);
+      if (activeBoard) {
+        document.title = `${activeBoard.title} | TaskFlow`;
+      }
     } else {
       // Initialize with default data
       const defaultData: KanbanData = {
@@ -45,6 +52,7 @@ function App() {
         filters: {}
       };
       setData(defaultData);
+      document.title = 'Main Board | TaskFlow';
     }
     setLoading(false);
   }, []);
