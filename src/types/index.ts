@@ -58,9 +58,16 @@ export interface Board {
   columns: Column[];
 }
 
+export interface FilterOptions {
+  labelIds: string[];
+  priority: Priority | null;
+  dueDateFilter: "overdue" | "today" | "thisWeek" | "future" | null;
+}
+
 export interface KanbanData {
   boards: Board[];
   activeBoard: string;
   users?: User[];
   labels?: Label[];
+  filters?: Record<string, FilterOptions>;
 }
