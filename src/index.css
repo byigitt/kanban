@@ -1,11 +1,6 @@
 /* Import Tailwind CSS using the new v4 syntax */
 @import "tailwindcss";
 
-/* Also include the traditional directives for compatibility */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Custom scrollbar styling */
 .board-scroll-container {
   scrollbar-width: thin;
