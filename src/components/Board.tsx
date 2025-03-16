@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { Board as BoardType, KanbanData, Column as ColumnType, Card as CardType } from '../types';
+import { Board as BoardType, KanbanData, Column as ColumnType, FilterOptions } from '../types';
 import Column from './Column';
-import LabelFilter from './LabelFilter';
+import FilterPanel from './FilterPanel';
 import { FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { filterCards } from '../utils/filterUtils';
 
 interface BoardProps {
   board: BoardType;
@@ -14,9 +15,17 @@ interface BoardProps {
 const Board = ({ board, setData, kanbanData }: BoardProps) => {
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [showNewColumnForm, setShowNewColumnForm] = useState(false);
-  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(true);
+  
+  // Initialize filter options from persisted state or with defaults
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>(
+    kanbanData.filters?.[board.id] || {
+      labelIds: [],
+      priority: null,
+      dueDateFilter: null
+    }
+  );
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +55,20 @@ const Board = ({ board, setData, kanbanData }: BoardProps) => {
       };
     }
   }, []);
+
+  // Persist filter options when they change
+  useEffect(() => {
+    setData(prevData => {
+      if (!prevData) return null;
+      return {
+        ...prevData,
+        filters: {
+          ...(prevData.filters || {}),
+          [board.id]: filterOptions
+        }
+      };
+    });
+  }, [filterOptions, board.id, setData]);
 
   // Scroll left/right
   const scrollBoard = (direction: 'left' | 'right') => {
@@ -103,24 +126,20 @@ const Board = ({ board, setData, kanbanData }: BoardProps) => {
     }, 100);
   };
 
-  // Filter cards based on selected labels
-  const filterCards = (cards: CardType[]): CardType[] => {
-    if (selectedLabelIds.length === 0) return cards;
-    
-    return cards.filter(card => 
-      selectedLabelIds.some(labelId => card.labels.includes(labelId))
-    );
-  };
+  // Check if any filters are active
+  const isFiltering = filterOptions.labelIds.length > 0 || 
+    filterOptions.priority !== null || 
+    filterOptions.dueDateFilter !== null;
 
   return (
     <main className="container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">{board.title}</h2>
         <div className="flex items-center space-x-2">
-          <LabelFilter 
+          <FilterPanel 
             labels={kanbanData.labels || []} 
-            selectedLabels={selectedLabelIds}
-            setSelectedLabels={setSelectedLabelIds}
+            filterOptions={filterOptions}
+            setFilterOptions={setFilterOptions}
           />
         </div>
       </div>
@@ -149,7 +168,7 @@ const Board = ({ board, setData, kanbanData }: BoardProps) => {
           <FiChevronRight />
         </button>
 
-        <Droppable droppableId="board-columns" direction="horizontal" type="column">
+        <Droppable droppableId={board.id} type="column" direction="horizontal">
           {(provided) => (
             <div 
               className="board-scroll-container hide-scrollbar overflow-x-auto min-h-[calc(100vh-200px)] pb-4"
@@ -174,14 +193,14 @@ const Board = ({ board, setData, kanbanData }: BoardProps) => {
                         <Column 
                           column={{
                             ...column,
-                            cards: filterCards(column.cards)
+                            cards: filterCards(column.cards, filterOptions)
                           }}
                           originalColumn={column}
                           board={board} 
                           setData={setData} 
                           kanbanData={kanbanData}
                           dragHandleProps={provided.dragHandleProps}
-                          isFiltering={selectedLabelIds.length > 0}
+                          isFiltering={isFiltering}
                         />
                       </div>
                     )}
@@ -189,40 +208,42 @@ const Board = ({ board, setData, kanbanData }: BoardProps) => {
                 ))}
                 {provided.placeholder}
 
+                {/* Add new column form */}
                 <div className="flex-shrink-0 w-80">
                   {showNewColumnForm ? (
-                    <div className="bg-gray-800 rounded-md shadow-md p-3">
-                      <form onSubmit={addColumn}>
-                        <input
-                          type="text"
-                          placeholder="Column Title"
-                          className="w-full px-3 py-2 border rounded-md bg-gray-700 border-gray-600 text-white"
-                          value={newColumnTitle}
-                          onChange={e => setNewColumnTitle(e.target.value)}
-                          autoFocus
-                        />
-                        <div className="flex justify-end mt-2">
-                          <button
-                            type="button"
-                            className="px-3 py-1 text-sm mr-2 text-gray-300 hover:text-white"
-                            onClick={() => setShowNewColumnForm(false)}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                          >
-                            Add Column
-                          </button>
-                        </div>
-                      </form>
-                    </div>
+                    <form 
+                      onSubmit={addColumn}
+                      className="bg-gray-800 rounded-md shadow-md p-3"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Enter column title..."
+                        className="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                        value={newColumnTitle}
+                        onChange={(e) => setNewColumnTitle(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          type="button"
+                          className="px-3 py-1 text-sm text-gray-300 hover:text-white"
+                          onClick={() => setShowNewColumnForm(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-500"
+                          disabled={!newColumnTitle.trim()}
+                        >
+                          Add Column
+                        </button>
+                      </div>
+                    </form>
                   ) : (
                     <button
-                      className="w-full h-12 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
+                      className="w-full h-12 flex items-center justify-center text-gray-400 bg-gray-800/50 hover:bg-gray-800 rounded-md border-2 border-dashed border-gray-700 hover:border-gray-600 transition-colors"
                       onClick={() => setShowNewColumnForm(true)}
-                      data-add-column
                     >
                       <FiPlus className="mr-2" />
                       Add Column

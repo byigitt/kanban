@@ -41,7 +41,8 @@ function App() {
           }
         ],
         activeBoard: 'board-1',
-        labels: []
+        labels: [],
+        filters: {}
       };
       setData(defaultData);
     }
