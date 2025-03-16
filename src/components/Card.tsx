@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Card as CardType, Column, Board, KanbanData, Priority } from '../types';
 import CardDetail from './CardDetail';
@@ -16,6 +16,24 @@ interface CardProps {
 
 const Card = ({ card, index, column, board, setData, kanbanData }: CardProps) => {
   const [showDetail, setShowDetail] = useState(false);
+
+  // Listen for openCard event
+  useEffect(() => {
+    const handleOpenCard = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { cardId, columnId, boardId } = customEvent.detail;
+      
+      if (cardId === card.id && columnId === column.id && boardId === board.id) {
+        setShowDetail(true);
+      }
+    };
+    
+    window.addEventListener('openCard', handleOpenCard);
+    
+    return () => {
+      window.removeEventListener('openCard', handleOpenCard);
+    };
+  }, [card.id, column.id, board.id]);
 
   // Get priority color
   const getPriorityColor = (priority: Priority) => {
